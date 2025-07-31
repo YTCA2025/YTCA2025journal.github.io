@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Journal de Compétition - Maroc-Cameroun</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 40px 0;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .flag {
+            width: 80px;
+            height: 60px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease;
+        }
+
+        .flag:hover {
+            transform: scale(1.1);
+        }
+
+        .flag.morocco {
+            background: linear-gradient(to bottom, #c1272d 0%, #c1272d 100%);
+            position: relative;
+        }
+
+        .flag.morocco::before {
+            content: "★";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #006233;
+            font-size: 24px;
+        }
+
+        .flag.cameroon {
+            background: linear-gradient(to right, #009639 0%, #009639 33%, #ce1126 33%, #ce1126 66%, #fcd116 66%, #fcd116 100%);
+            position: relative;
+        }
+
+        .flag.cameroon::before {
+            content: "★";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #fcd116;
+            font-size: 20px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1.2em;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 300;
+        }
+
+        .duration {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px 20px;
+            border-radius: 25px;
+            display: inline-block;
+            margin-top: 15px;
+            color: white;
+            font-weight: 500;
+        }
+
+        /* Admin Button */
+        .admin-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            font-weight: 500;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .admin-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .admin-mode .admin-controls {
+            display: block !important;
+        }
+
+        .admin-controls {
+            display: none;
+            margin-top: 10px;
+        }
+
+        .admin-panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .admin-panel h3 {
+            margin-bottom: 15px;
+            color: #5a67d8;
+        }
+
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: #5a67d8;
+            background: rgba(90, 103, 216, 0.1);
+        }
+
+        .upload-area.dragover {
+            border-color: #5a67d8;
+            background: rgba(90, 103, 216, 0.1);
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        .section-select, .description-input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin: 5px;
+            font-size: 14px;
+        }
+
+        nav {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        nav a:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .section {
+            margin-bottom: 50px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .section h2 {
+            color: #5a67d8;
+            margin-bottom: 20px;
+            font-size: 2em;
+            text-align: center;
+            position: relative;
+            padding-bottom: 10px;
+        }
+
+        .section h2::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 3px;
+            background: linear-gradient(to right, #667eea, #764ba2);
+            border-radius: 2px;
+        }
+
+        .section-description {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+            color: #666;
+            font-style: italic;
+        }
+
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .photo-item {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            height: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        .photo-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .photo-placeholder {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #e0e7ff, #c7d2fe);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6366f1;
+            font-size: 1.2em;
+            font-weight: 500;
+            text-align: center;
+            padding: 20px;
+        }
+
+        /* Replace your .img CSS with this for perfect square images */
+.img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    aspect-ratio: 1 / 1;
+    border-radius: 0;
+    background: #eee;
+    /* Remove extra margin/padding if any */
+}
+
+/* Make sure .photo-item is always a square */
+.photo-item {
+    aspect-ratio: 1 / 1;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-end;
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+/* Keep description at the bottom, overlay if needed */
+.photo-desc {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: rgba(255,255,255,0.85);
+    color: #333;
+    font-size: 1em;
+    font-weight: 500;
+    padding: 8px 0;
+    text-align: center;
+    border-bottom-left-radius: 15px;
+    border-bottom-right-radius: 15px;
+    margin: 0;
+    box-sizing: border-box;
+    z-index: 2;
+}
+
+        /* Edit Controls */
+        .photo-controls {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            display: none;
+            gap: 5px;
+        }
+
+        .admin-mode .photo-controls {
+            display: flex;
+        }
+
+        .control-btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .control-btn:hover {
+            background: white;
+            transform: scale(1.1);
+        }
+
+        .edit-btn {
+            color: #2563eb;
+        }
+
+        .delete-btn {
+            color: #dc2626;
+        }
+
+        .add-photo-btn {
+            background: linear-gradient(45deg, #e0e7ff, #c7d2fe);
+            border: 2px dashed #6366f1;
+            color: #6366f1;
+            font-size: 2em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .add-photo-btn:hover {
+            background: linear-gradient(45deg, #c7d2fe, #a5b4fc);
+            transform: translateY(-5px);
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 40px 0;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-item {
+            text-align: center;
+            color: white;
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px 0;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            margin-top: 50px;
+            color: white;
+            backdrop-filter: blur(10px);
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .heart {
+            color: #ff6b6b;
+            font-size: 1.5em;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            position: relative;
+        }
+
+        .close {
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .modal h3 {
+            margin-bottom: 20px;
+            color: #5a67d8;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            nav ul {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .photo-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 15px;
+            }
+
+            .stats {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .admin-toggle {
+                top: 10px;
+                right: 10px;
+                padding: 8px 16px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="admin-toggle" onclick="toggleAdminMode()">👤 Mode Admin</button>
+
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <div class="flag morocco"></div>
+                <div>
+                    <h1>Journal de Compétition</h1>
+                    <p class="subtitle">Une aventure inoubliable entre le Maroc et le Cameroun</p>
+                    <div class="duration">15 jours d'échanges culturels et technologiques</div>
+                </div>
+                <div class="flag cameroon"></div>
+            </div>
+        </header>
+
+        <nav>
+            <ul>
+                <li><a href="#ice-breaking">Ice Breaking</a></li>
+                <li><a href="#culturelle">Journée Culturelle</a></li>
+                <li><a href="#hackathon">Hackathon</a></li>
+                <li><a href="#imlil">Sortie Imlil</a></li>
+                <li><a href="#friends">Friends 4 Ever</a></li>
+            </ul>
+        </nav>
+
+        <div class="stats">
+            <div class="stat-item">
+                <span class="stat-number">15</span>
+                <span class="stat-label">Jours</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number" id="photo-count">~100</span>
+                <span class="stat-label">Photos</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">2</span>
+                <span class="stat-label">Pays</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">5</span>
+                <span class="stat-label">Activités</span>
+            </div>
+        </div>
+
+        <section id="ice-breaking" class="section">
+            <h2>🧊 Ice Breaking</h2>
+            <p class="section-description">
+                Les premiers moments de rencontre entre les participants marocains et camerounais. 
+                Jeux, présentations et activités pour briser la glace et créer les premières connexions.
+            </p>
+            <div class="admin-controls">
+                <div class="admin-panel">
+                    <h3>Ajouter une photo - Ice Breaking</h3>
+                    <div class="upload-area" onclick="document.getElementById('file-ice-breaking').click()">
+                        <p>📷 Cliquez ou glissez une image ici</p>
+                        <input type="file" id="file-ice-breaking" class="file-input" accept="image/*" onchange="handleFileUpload(event, 'ice-breaking')">
+                    </div>
+                    <input type="text" class="description-input" id="desc-ice-breaking" placeholder="Description de la photo">
+                    <button class="upload-btn" onclick="addPhoto('ice-breaking')">Ajouter la photo</button>
+                </div>
+            </div>
+            <div class="photo-grid" id="grid-ice-breaking">
+                <!-- Photos will be loaded here -->
+            </div>
+        </section>
+
+        <section id="culturelle" class="section">
+            <h2>🎭 Journée Culturelle</h2>
+            <p class="section-description">
+                Découverte des richesses culturelles du Maroc et du Cameroun. 
+                Danses traditionnelles, cuisine locale, artisanat et échanges sur les traditions.
+            </p>
+            <div class="admin-controls">
+                <div class="admin-panel">
+                    <h3>Ajouter une photo - Journée Culturelle</h3>
+                    <div class="upload-area" onclick="document.getElementById('file-culturelle').click()">
+                        <p>📷 Cliquez ou glissez une image ici</p>
+                        <input type="file" id="file-culturelle" class="file-input" accept="image/*" onchange="handleFileUpload(event, 'culturelle')">
+                    </div>
+                    <input type="text" class="description-input" id="desc-culturelle" placeholder="Description de la photo">
+                    <button class="upload-btn" onclick="addPhoto('culturelle')">Ajouter la photo</button>
+                </div>
+            </div>
+            <div class="photo-grid" id="grid-culturelle">
+                <!-- Photos will be loaded here -->
+            </div>
+        </section>
+
+        <section id="hackathon" class="section">
+            <h2>💻 Hackathon</h2>
+            <p class="section-description">
+                Compétition technologique intense où les équipes mixtes développent des solutions innovantes. 
+                Codage, créativité et collaboration pour relever des défis technologiques.
+            </p>
+            <div class="admin-controls">
+                <div class="admin-panel">
+                    <h3>Ajouter une photo - Hackathon</h3>
+                    <div class="upload-area" onclick="document.getElementById('file-hackathon').click()">
+                        <p>📷 Cliquez ou glissez une image ici</p>
+                        <input type="file" id="file-hackathon" class="file-input" accept="image/*" onchange="handleFileUpload(event, 'hackathon')">
+                    </div>
+                    <input type="text" class="description-input" id="desc-hackathon" placeholder="Description de la photo">
+                    <button class="upload-btn" onclick="addPhoto('hackathon')">Ajouter la photo</button>
+                </div>
+            </div>
+            <div class="photo-grid" id="grid-hackathon">
+                <!-- Photos will be loaded here -->
+            </div>
+        </section>
+
+        <section id="imlil" class="section">
+            <h2>🏔️ Sortie Imlil</h2>
+            <p class="section-description">
+                Excursion dans les montagnes de l'Atlas marocain, au village d'Imlil. 
+                Découverte des paysages spectaculaires et de la culture berbère.
+            </p>
+            <div class="admin-controls">
+                <div class="admin-panel">
+                    <h3>Ajouter une photo - Sortie Imlil</h3>
+                    <div class="upload-area" onclick="document.getElementById('file-imlil').click()">
+                        <p>📷 Cliquez ou glissez une image ici</p>
+                        <input type="file" id="file-imlil" class="file-input" accept="image/*" onchange="handleFileUpload(event, 'imlil')">
+                    </div>
+                    <input type="text" class="description-input" id="desc-imlil" placeholder="Description de la photo">
+                    <button class="upload-btn" onclick="addPhoto('imlil')">Ajouter la photo</button>
+                </div>
+            </div>
+            <div class="photo-grid" id="grid-imlil">
+                <!-- Photos will be loaded here -->
+            </div>
+        </section>
+
+        <section id="friends" class="section">
+            <h2>👥 Friends 4 Ever</h2>
+            <p class="section-description">
+                Les moments les plus précieux : les amitiés créées, les promesses d'avenir 
+                et les liens indéfectibles tissés entre les participants des deux pays.
+            </p>
+            <div class="admin-controls">
+                <div class="admin-panel">
+                    <h3>Ajouter une photo - Friends 4 Ever</h3>
+                    <div class="upload-area" onclick="document.getElementById('file-friends').click()">
+                        <p>📷 Cliquez ou glissez une image ici</p>
+                        <input type="file" id="file-friends" class="file-input" accept="image/*" onchange="handleFileUpload(event, 'friends')">
+                    </div>
+                    <input type="text" class="description-input" id="desc-friends" placeholder="Description de la photo">
+                    <button class="upload-btn" onclick="addPhoto('friends')">Ajouter la photo</button>
+                </div>
+            </div>
+            <div class="photo-grid" id="grid-friends">
+                <!-- Photos will be loaded here -->
+            </div>
+        </section>
+
+        <footer>
+            <div class="footer-content">
+                <span>Made with</span>
+                <span class="heart">❤️</span>
+                <span>to immortalize these magical moments</span>
+            </div>
+            <p>YTCA 2025</p>
+        </footer>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h3>Modifier la photo</h3>
+            <div class="form-group">
+                <label for="editDescription">Description:</label>
+                <input type="text" id="editDescription" placeholder="Nouvelle description">
+            </div>
+            <div class="form-group">
+                <label for="editImage">Nouvelle image (optionnel):</label>
+                <input type="file" id="editImage" accept="image/*">
+            </div>
+            <button class="btn-primary" onclick="saveEdit()">Sauvegarder</button>
+        </div>
+    </div>
+
+    <script>
+// Photo Journal Persistence Script
+// This script provides session-based persistence for the photo journal
+
+let adminMode = false;
+let currentEditId = null;
+let currentEditSection = null;
+let photos = {
+    'ice-breaking': [],
+    'culturelle': [],
+    'hackathon': [],
+    'imlil': [],
+    'friends': []
+};
+let nextId = 1;
+let uploadedFiles = {}; // Store uploaded files temporarily
+
+// Session storage using browser's sessionStorage (works in most environments)
+const STORAGE_KEY = 'ytca_photos_session';
+const ID_KEY = 'ytca_nextId_session';
+
+// Persistence functions using sessionStorage
+function savePhotosToSession() {
+    try {
+        if (typeof sessionStorage !== 'undefined') {
+            sessionStorage.setItem(STORAGE_KEY, JSON.stringify(photos));
+            sessionStorage.setItem(ID_KEY, nextId.toString());
+        } else {
+            // Fallback: save to a global window object
+            window.ytcaPhotosBackup = JSON.stringify(photos);
+            window.ytcaNextIdBackup = nextId;
+        }
+    } catch (e) {
+        console.warn('Session storage not available, using memory only');
+    }
+}
+
+function loadPhotosFromSession() {
+    try {
+        if (typeof sessionStorage !== 'undefined') {
+            const storedPhotos = sessionStorage.getItem(STORAGE_KEY);
+            const storedNextId = sessionStorage.getItem(ID_KEY);
+            
+            if (storedPhotos) {
+                photos = JSON.parse(storedPhotos);
+            }
+            if (storedNextId) {
+                nextId = parseInt(storedNextId, 10);
+            }
+        } else {
+            // Fallback: load from global window object
+            if (window.ytcaPhotosBackup) {
+                photos = JSON.parse(window.ytcaPhotosBackup);
+            }
+            if (window.ytcaNextIdBackup) {
+                nextId = window.ytcaNextIdBackup;
+            }
+        }
+    } catch (e) {
+        console.warn('Could not load from session storage');
+    }
+}
+
+// Alternative: Base64 URL encoding for state persistence
+function encodeStateToURL() {
+    const state = {
+        photos: photos,
+        nextId: nextId
+    };
+    const encoded = btoa(JSON.stringify(state));
+    return encoded;
+}
+
+function decodeStateFromURL(encoded) {
+    try {
+        const decoded = atob(encoded);
+        const state = JSON.parse(decoded);
+        photos = state.photos || photos;
+        nextId = state.nextId || nextId;
+    } catch (e) {
+        console.warn('Could not decode state from URL');
+    }
+}
+
+// Export/Import functionality for manual backup
+function exportPhotos() {
+    const dataStr = JSON.stringify({ photos, nextId }, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'ytca_photos_backup.json';
+    link.click();
+    URL.revokeObjectURL(url);
+    showNotification('Photos exportées avec succès!', 'success');
+}
+
+function importPhotos(fileInput) {
+    const file = fileInput.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            if (data.photos && data.nextId) {
+                photos = data.photos;
+                nextId = data.nextId;
+                savePhotosToSession();
+                renderAllSections();
+                updatePhotoCount();
+                showNotification('Photos importées avec succès!', 'success');
+            }
+        } catch (error) {
+            showNotification('Erreur lors de l\'importation!', 'error');
+        }
+    };
+    reader.readAsText(file);
+}
+
+// Initialize with default photos if none exist
+function initializePhotos() {
+    loadPhotosFromSession();
+    
+    // If no photos in storage, initialize with defaults
+    if (Object.values(photos).every(arr => arr.length === 0)) {
+        const defaultPhotos = {
+            'ice-breaking': [
+                { id: nextId++, src: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQwIiBoZWlnaHQ9IjE4MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5QcmVtacOocmUgcmVuY29udHJlPC90ZXh0Pjwvc3ZnPg==', desc: 'Première rencontre' },
+                { id: nextId++, src: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQwIiBoZWlnaHQ9IjE4MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5KZXV4IGRlIHByw6lzZW50YXRpb248L3RleHQ+PC9zdmc+', desc: 'Jeux de présentation' }
+            ],
+            'culturelle': [
+                { id: nextId++, src: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQwIiBoZWlnaHQ9IjE4MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5EYW5zZXMgbWFyb2NhaW5lczwvdGV4dD48L3N2Zz4=', desc: 'Danses marocaines' }
+            ],
+            'hackathon': [
+                { id: nextId++, src: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQwIiBoZWlnaHQ9IjE4MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Db2RhZ2UgaW50ZW5zZTwvdGV4dD48L3N2Zz4=', desc: 'Codage intense' }
+            ],
+            'imlil': [
+                { id: nextId++, src: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQwIiBoZWlnaHQ9IjE4MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Nb250YWduZXMgZGUgbCdBdGxhczwvdGV4dD48L3N2Zz4=', desc: 'Montagnes de l\'Atlas' }
+            ],
+            'friends': [
+                { id: nextId++, src: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQwIiBoZWlnaHQ9IjE4MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5BbWl0acOpcyDDoCB2aWU8L3RleHQ+PC9zdmc+', desc: 'Amitiés à vie' }
+            ]
+        };
+        photos = { ...defaultPhotos };
+        nextId = 10;
+        savePhotosToSession();
+    }
+    
+    renderAllSections();
+    updatePhotoCount();
+}
+
+// Toggle admin mode
+function toggleAdminMode() {
+    adminMode = !adminMode;
+    document.body.classList.toggle('admin-mode', adminMode);
+    
+    const button = document.querySelector('.admin-toggle');
+    button.textContent = adminMode ? '🔒 Mode Normal' : '👤 Mode Admin';
+    button.style.background = adminMode ? 'rgba(220, 38, 38, 0.2)' : 'rgba(255, 255, 255, 0.2)';
+}
+
+// Handle file upload
+function handleFileUpload(event, section) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            uploadedFiles[section] = e.target.result;
+            // Update upload area to show file selected
+            const uploadArea = event.target.parentNode;
+            uploadArea.innerHTML = `<p>✅ Fichier sélectionné: ${file.name}</p>`;
+            uploadArea.style.borderColor = '#10b981';
+            uploadArea.style.background = 'rgba(16, 185, 129, 0.1)';
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+// Add photo to section
+function addPhoto(section) {
+    const descInput = document.getElementById(`desc-${section}`);
+    const description = descInput.value.trim();
+    
+    if (!uploadedFiles[section]) {
+        alert('Veuillez sélectionner une image d\'abord!');
+        return;
+    }
+    
+    if (!description) {
+        alert('Veuillez ajouter une description!');
+        return;
+    }
+    
+    const newPhoto = {
+        id: nextId++,
+        src: uploadedFiles[section],
+        desc: description
+    };
+    
+    photos[section].push(newPhoto);
+    savePhotosToSession(); // Save after adding
+    renderSection(section);
+    updatePhotoCount();
+    descInput.value = '';
+    delete uploadedFiles[section];
+    resetUploadArea(section);
+    showNotification('Photo ajoutée avec succès!', 'success');
+}
+
+function resetUploadArea(section) {
+    const uploadArea = document.querySelector(`#file-${section}`).parentNode;
+    uploadArea.innerHTML = `<p>📷 Cliquez ou glissez une image ici</p>`;
+    uploadArea.style.borderColor = '#ccc';
+    uploadArea.style.background = '';
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.id = `file-${section}`;
+    fileInput.className = 'file-input';
+    fileInput.accept = 'image/*';
+    fileInput.onchange = (e) => handleFileUpload(e, section);
+    uploadArea.appendChild(fileInput);
+}
+
+function renderSection(section) {
+    const grid = document.getElementById(`grid-${section}`);
+    grid.innerHTML = '';
+    
+    photos[section].forEach(photo => {
+        const photoElement = createPhotoElement(photo, section);
+        grid.appendChild(photoElement);
+    });
+    
+    if (adminMode) {
+        const addButton = createAddPhotoButton(section);
+        grid.appendChild(addButton);
+    }
+}
+
+function createPhotoElement(photo, section) {
+    const photoDiv = document.createElement('div');
+    photoDiv.className = 'photo-item';
+    photoDiv.innerHTML = `
+        ${photo.src ? `<img src="${photo.src}" alt="${photo.desc}" class="img">` : `<div class="photo-placeholder">${photo.desc}</div>`}
+        <div class="photo-desc">${photo.desc}</div>
+        <div class="photo-controls">
+            <button class="control-btn edit-btn" onclick="editPhoto(${photo.id}, '${section}')" title="Modifier">✏️</button>
+            <button class="control-btn delete-btn" onclick="deletePhoto(${photo.id}, '${section}')" title="Supprimer">🗑️</button>
+        </div>
+    `;
+    return photoDiv;
+}
+
+function createAddPhotoButton(section) {
+    const addDiv = document.createElement('div');
+    addDiv.className = 'photo-item add-photo-btn';
+    addDiv.innerHTML = '+';
+    addDiv.onclick = () => {
+        document.getElementById(`file-${section}`).click();
+    };
+    return addDiv;
+}
+
+function editPhoto(photoId, section) {
+    const photo = photos[section].find(p => p.id === photoId);
+    if (!photo) return;
+    
+    currentEditId = photoId;
+    currentEditSection = section;
+    
+    document.getElementById('editDescription').value = photo.desc;
+    document.getElementById('editModal').style.display = 'block';
+}
+
+// Delete photo
+function deletePhoto(photoId, section) {
+    if (confirm('Êtes-vous sûr de vouloir supprimer cette photo?')) {
+        photos[section] = photos[section].filter(p => p.id !== photoId);
+        savePhotosToSession(); // Save after deletion
+        renderSection(section);
+        updatePhotoCount();
+        showNotification('Photo supprimée!', 'success');
+    }
+}
+
+// Save edit
+function saveEdit() {
+    if (!currentEditId) return;
+    
+    const newDesc = document.getElementById('editDescription').value.trim();
+    const newImageFile = document.getElementById('editImage').files[0];
+    
+    if (!newDesc) {
+        alert('La description ne peut pas être vide!');
+        return;
+    }
+    
+    const photo = photos[currentEditSection].find(p => p.id === currentEditId);
+    if (photo) {
+        photo.desc = newDesc;
+        
+        if (newImageFile) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                photo.src = e.target.result;
+                savePhotosToSession(); // Save after edit
+                renderSection(currentEditSection);
+                closeModal();
+                showNotification('Photo modifiée avec succès!', 'success');
+            };
+            reader.readAsDataURL(newImageFile);
+        } else {
+            savePhotosToSession(); // Save after edit
+            renderSection(currentEditSection);
+            closeModal();
+            showNotification('Photo modifiée avec succès!', 'success');
+        }
+    }
+}
+
+// Close modal
+function closeModal() {
+    document.getElementById('editModal').style.display = 'none';
+    currentEditId = null;
+    currentEditSection = null;
+    document.getElementById('editDescription').value = '';
+    document.getElementById('editImage').value = '';
+}
+
+// Render all sections
+function renderAllSections() {
+    Object.keys(photos).forEach(section => {
+        renderSection(section);
+    });
+}
+
+// Update photo count
+function updatePhotoCount() {
+    const totalPhotos = Object.values(photos).reduce((total, sectionPhotos) => total + sectionPhotos.length, 0);
+    document.getElementById('photo-count').textContent = totalPhotos;
+}
+
+// Show notification
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        z-index: 3000;
+        font-weight: 500;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        animation: slideDown 0.3s ease;
+    `;
+    notification.textContent = message;
+    
+    // Add animation keyframes
+    if (!document.getElementById('notification-styles')) {
+        const style = document.createElement('style');
+        style.id = 'notification-styles';
+        style.textContent = `
+            @keyframes slideDown {
+                from { transform: translateX(-50%) translateY(-100%); opacity: 0; }
+                to { transform: translateX(-50%) translateY(0); opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+
+function setupDragAndDrop() {
+    const uploadAreas = document.querySelectorAll('.upload-area');
+    
+    uploadAreas.forEach(area => {
+        area.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            area.classList.add('dragover');
+        });
+        
+        area.addEventListener('dragleave', () => {
+            area.classList.remove('dragover');
+        });
+        
+        area.addEventListener('drop', (e) => {
+            e.preventDefault();
+            area.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const section = area.querySelector('input').id.replace('file-', '');
+                const fakeEvent = { target: { files: [files[0]] } };
+                handleFileUpload(fakeEvent, section);
+            }
+        });
+    });
+}
+
+function setupSmoothScrolling() {
+    const navLinks = document.querySelectorAll('nav a');
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const targetId = link.getAttribute('href').substring(1);
+            const targetElement = document.getElementById(targetId);
+            if (targetElement) {
+                targetElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        });
+    });
+}
+
+// Add backup/restore buttons to admin panel
+function addBackupControls() {
+    const adminPanels = document.querySelectorAll('.admin-panel');
+    adminPanels.forEach(panel => {
+        if (!panel.querySelector('.backup-controls')) {
+            const backupDiv = document.createElement('div');
+            backupDiv.className = 'backup-controls';
+            backupDiv.innerHTML = `
+                <hr style="margin: 15px 0;">
+                <button class="upload-btn" onclick="exportPhotos()">📥 Exporter les photos</button>
+                <input type="file" id="import-file" accept=".json" style="display: none;" onchange="importPhotos(this)">
+                <button class="upload-btn" onclick="document.getElementById('import-file').click()">📤 Importer les photos</button>
+            `;
+            panel.appendChild(backupDiv);
+        }
+    });
+}
+
+// Auto-save every 30 seconds
+setInterval(() => {
+    savePhotosToSession();
+}, 30000);
+
+// Save before page unload
+window.addEventListener('beforeunload', () => {
+    savePhotosToSession();
+});
+
+// Event listeners
+window.onclick = function(event) {
+    const modal = document.getElementById('editModal');
+    if (event.target === modal) {
+        closeModal();
+    }
+}
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        closeModal();
+    }
+    
+    if (e.ctrlKey && e.altKey && e.key === 'a') {
+        e.preventDefault();
+        toggleAdminMode();
+    }
+});
+
+// Initialize everything when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    initializePhotos();
+    setupDragAndDrop();
+    setupSmoothScrolling();
+    
+    // Add backup controls after a short delay to ensure admin panels exist
+    setTimeout(addBackupControls, 100);
+    
+    console.log('Photo Journal initialized successfully!');
+    console.log('Press Ctrl+Alt+A to toggle admin mode');
+    console.log('Data is automatically saved to session storage');
+});
+    </script>
