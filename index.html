@@ -758,8 +758,8 @@
     </div>
 
     <script>
-// Photo Journal Persistence Script
-// This script provides session-based persistence for the photo journal
+// Photo Journal with Server Persistence Script
+// This script provides server-based persistence for the photo journal
 
 let adminMode = false;
 let currentEditId = null;
@@ -774,31 +774,89 @@ let photos = {
 let nextId = 1;
 let uploadedFiles = {}; // Store uploaded files temporarily
 
-// Session storage using browser's sessionStorage (works in most environments)
-const STORAGE_KEY = 'ytca_photos_session';
-const ID_KEY = 'ytca_nextId_session';
+// Server configuration
+const SERVER_CONFIG = {
+    dataUrl: './data/photos.json', // Path to JSON file on server
+    saveUrl: './api/save-photos.php', // PHP script to save photos
+    pollInterval: 5000 // Check for updates every 5 seconds
+};
 
-// Persistence functions using sessionStorage
-function savePhotosToSession() {
+let lastSyncTime = Date.now();
+let isOnline = navigator.onLine;
+
+// Server persistence functions
+async function savePhotosToServer() {
     try {
-        if (typeof sessionStorage !== 'undefined') {
-            sessionStorage.setItem(STORAGE_KEY, JSON.stringify(photos));
-            sessionStorage.setItem(ID_KEY, nextId.toString());
+        const dataToSave = {
+            photos: photos,
+            nextId: nextId,
+            lastModified: Date.now()
+        };
+
+        const response = await fetch(SERVER_CONFIG.saveUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(dataToSave)
+        });
+
+        if (response.ok) {
+            lastSyncTime = Date.now();
+            showNotification('Photos sauvegardées sur le serveur!', 'success');
+            return true;
         } else {
-            // Fallback: save to a global window object
-            window.ytcaPhotosBackup = JSON.stringify(photos);
-            window.ytcaNextIdBackup = nextId;
+            throw new Error('Server save failed');
         }
-    } catch (e) {
-        console.warn('Session storage not available, using memory only');
+    } catch (error) {
+        console.warn('Server save failed:', error);
+        // Fallback to local storage
+        savePhotosToLocal();
+        showNotification('Sauvegarde locale (hors ligne)', 'warning');
+        return false;
     }
 }
 
-function loadPhotosFromSession() {
+async function loadPhotosFromServer() {
     try {
-        if (typeof sessionStorage !== 'undefined') {
-            const storedPhotos = sessionStorage.getItem(STORAGE_KEY);
-            const storedNextId = sessionStorage.getItem(ID_KEY);
+        const response = await fetch(SERVER_CONFIG.dataUrl + '?t=' + Date.now());
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (data.photos && data.nextId) {
+                photos = data.photos;
+                nextId = data.nextId;
+                lastSyncTime = data.lastModified || Date.now();
+                return true;
+            }
+        }
+        throw new Error('Server load failed');
+    } catch (error) {
+        console.warn('Server load failed:', error);
+        // Fallback to local storage
+        loadPhotosFromLocal();
+        return false;
+    }
+}
+
+// Fallback local storage functions
+function savePhotosToLocal() {
+    try {
+        if (typeof localStorage !== 'undefined') {
+            localStorage.setItem('ytca_photos', JSON.stringify(photos));
+            localStorage.setItem('ytca_nextId', nextId.toString());
+            localStorage.setItem('ytca_lastModified', Date.now().toString());
+        }
+    } catch (e) {
+        console.warn('Local storage not available');
+    }
+}
+
+function loadPhotosFromLocal() {
+    try {
+        if (typeof localStorage !== 'undefined') {
+            const storedPhotos = localStorage.getItem('ytca_photos');
+            const storedNextId = localStorage.getItem('ytca_nextId');
             
             if (storedPhotos) {
                 photos = JSON.parse(storedPhotos);
@@ -806,83 +864,55 @@ function loadPhotosFromSession() {
             if (storedNextId) {
                 nextId = parseInt(storedNextId, 10);
             }
-        } else {
-            // Fallback: load from global window object
-            if (window.ytcaPhotosBackup) {
-                photos = JSON.parse(window.ytcaPhotosBackup);
-            }
-            if (window.ytcaNextIdBackup) {
-                nextId = window.ytcaNextIdBackup;
-            }
         }
     } catch (e) {
-        console.warn('Could not load from session storage');
+        console.warn('Could not load from local storage');
     }
 }
 
-// Alternative: Base64 URL encoding for state persistence
-function encodeStateToURL() {
-    const state = {
-        photos: photos,
-        nextId: nextId
-    };
-    const encoded = btoa(JSON.stringify(state));
-    return encoded;
-}
+// Sync with server periodically
+async function syncWithServer() {
+    if (!isOnline) return;
 
-function decodeStateFromURL(encoded) {
     try {
-        const decoded = atob(encoded);
-        const state = JSON.parse(decoded);
-        photos = state.photos || photos;
-        nextId = state.nextId || nextId;
-    } catch (e) {
-        console.warn('Could not decode state from URL');
-    }
-}
-
-// Export/Import functionality for manual backup
-function exportPhotos() {
-    const dataStr = JSON.stringify({ photos, nextId }, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'ytca_photos_backup.json';
-    link.click();
-    URL.revokeObjectURL(url);
-    showNotification('Photos exportées avec succès!', 'success');
-}
-
-function importPhotos(fileInput) {
-    const file = fileInput.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            const data = JSON.parse(e.target.result);
-            if (data.photos && data.nextId) {
-                photos = data.photos;
-                nextId = data.nextId;
-                savePhotosToSession();
+        const response = await fetch(SERVER_CONFIG.dataUrl + '?t=' + Date.now());
+        if (response.ok) {
+            const serverData = await response.json();
+            const serverLastModified = serverData.lastModified || 0;
+            
+            // If server data is newer, update local data
+            if (serverLastModified > lastSyncTime) {
+                photos = serverData.photos || photos;
+                nextId = serverData.nextId || nextId;
+                lastSyncTime = serverLastModified;
+                
                 renderAllSections();
                 updatePhotoCount();
-                showNotification('Photos importées avec succès!', 'success');
+                showNotification('Photos mises à jour depuis le serveur', 'info');
             }
-        } catch (error) {
-            showNotification('Erreur lors de l\'importation!', 'error');
         }
-    };
-    reader.readAsText(file);
+    } catch (error) {
+        console.warn('Sync failed:', error);
+    }
+}
+
+// Connection status monitoring
+function updateConnectionStatus() {
+    isOnline = navigator.onLine;
+    const statusIndicator = document.getElementById('connection-status');
+    if (statusIndicator) {
+        statusIndicator.textContent = isOnline ? '🟢 En ligne' : '🔴 Hors ligne';
+        statusIndicator.style.color = isOnline ? '#10b981' : '#ef4444';
+    }
 }
 
 // Initialize with default photos if none exist
-function initializePhotos() {
-    loadPhotosFromSession();
+async function initializePhotos() {
+    // Try to load from server first
+    const serverLoaded = await loadPhotosFromServer();
     
-    // If no photos in storage, initialize with defaults
-    if (Object.values(photos).every(arr => arr.length === 0)) {
+    // If server loading failed and no local data, initialize with defaults
+    if (!serverLoaded && Object.values(photos).every(arr => arr.length === 0)) {
         const defaultPhotos = {
             'ice-breaking': [
                 { id: nextId++, src: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQwIiBoZWlnaHQ9IjE4MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5QcmVtacOocmUgcmVuY29udHJlPC90ZXh0Pjwvc3ZnPg==', desc: 'Première rencontre' },
@@ -903,11 +933,14 @@ function initializePhotos() {
         };
         photos = { ...defaultPhotos };
         nextId = 10;
-        savePhotosToSession();
+        await savePhotosToServer();
     }
     
     renderAllSections();
     updatePhotoCount();
+    
+    // Start periodic sync
+    setInterval(syncWithServer, SERVER_CONFIG.pollInterval);
 }
 
 // Toggle admin mode
@@ -938,7 +971,7 @@ function handleFileUpload(event, section) {
 }
 
 // Add photo to section
-function addPhoto(section) {
+async function addPhoto(section) {
     const descInput = document.getElementById(`desc-${section}`);
     const description = descInput.value.trim();
     
@@ -959,7 +992,13 @@ function addPhoto(section) {
     };
     
     photos[section].push(newPhoto);
-    savePhotosToSession(); // Save after adding
+    
+    // Save to server
+    const saved = await savePhotosToServer();
+    if (!saved) {
+        savePhotosToLocal(); // Fallback
+    }
+    
     renderSection(section);
     updatePhotoCount();
     descInput.value = '';
@@ -1033,10 +1072,16 @@ function editPhoto(photoId, section) {
 }
 
 // Delete photo
-function deletePhoto(photoId, section) {
+async function deletePhoto(photoId, section) {
     if (confirm('Êtes-vous sûr de vouloir supprimer cette photo?')) {
         photos[section] = photos[section].filter(p => p.id !== photoId);
-        savePhotosToSession(); // Save after deletion
+        
+        // Save to server
+        const saved = await savePhotosToServer();
+        if (!saved) {
+            savePhotosToLocal(); // Fallback
+        }
+        
         renderSection(section);
         updatePhotoCount();
         showNotification('Photo supprimée!', 'success');
@@ -1044,7 +1089,7 @@ function deletePhoto(photoId, section) {
 }
 
 // Save edit
-function saveEdit() {
+async function saveEdit() {
     if (!currentEditId) return;
     
     const newDesc = document.getElementById('editDescription').value.trim();
@@ -1061,16 +1106,27 @@ function saveEdit() {
         
         if (newImageFile) {
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 photo.src = e.target.result;
-                savePhotosToSession(); // Save after edit
+                
+                // Save to server
+                const saved = await savePhotosToServer();
+                if (!saved) {
+                    savePhotosToLocal(); // Fallback
+                }
+                
                 renderSection(currentEditSection);
                 closeModal();
                 showNotification('Photo modifiée avec succès!', 'success');
             };
             reader.readAsDataURL(newImageFile);
         } else {
-            savePhotosToSession(); // Save after edit
+            // Save to server
+            const saved = await savePhotosToServer();
+            if (!saved) {
+                savePhotosToLocal(); // Fallback
+            }
+            
             renderSection(currentEditSection);
             closeModal();
             showNotification('Photo modifiée avec succès!', 'success');
@@ -1108,7 +1164,7 @@ function showNotification(message, type = 'info') {
         top: 20px;
         left: 50%;
         transform: translateX(-50%);
-        background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+        background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : type === 'warning' ? '#f59e0b' : '#3b82f6'};
         color: white;
         padding: 12px 24px;
         border-radius: 8px;
@@ -1137,6 +1193,48 @@ function showNotification(message, type = 'info') {
     setTimeout(() => {
         notification.remove();
     }, 3000);
+}
+
+// Export/Import functionality
+async function exportPhotos() {
+    const dataStr = JSON.stringify({ photos, nextId }, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'ytca_photos_backup.json';
+    link.click();
+    URL.revokeObjectURL(url);
+    showNotification('Photos exportées avec succès!', 'success');
+}
+
+async function importPhotos(fileInput) {
+    const file = fileInput.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            if (data.photos && data.nextId) {
+                photos = data.photos;
+                nextId = data.nextId;
+                
+                // Save to server
+                const saved = await savePhotosToServer();
+                if (!saved) {
+                    savePhotosToLocal(); // Fallback
+                }
+                
+                renderAllSections();
+                updatePhotoCount();
+                showNotification('Photos importées avec succès!', 'success');
+            }
+        } catch (error) {
+            showNotification('Erreur lors de l\'importation!', 'error');
+        }
+    };
+    reader.readAsText(file);
 }
 
 function setupDragAndDrop() {
@@ -1183,6 +1281,27 @@ function setupSmoothScrolling() {
     });
 }
 
+// Add connection status indicator
+function addConnectionStatus() {
+    const header = document.querySelector('header .header-content');
+    if (header && !document.getElementById('connection-status')) {
+        const statusDiv = document.createElement('div');
+        statusDiv.id = 'connection-status';
+        statusDiv.style.cssText = `
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255,255,255,0.2);
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            backdrop-filter: blur(5px);
+        `;
+        header.appendChild(statusDiv);
+        updateConnectionStatus();
+    }
+}
+
 // Add backup/restore buttons to admin panel
 function addBackupControls() {
     const adminPanels = document.querySelectorAll('.admin-panel');
@@ -1195,21 +1314,12 @@ function addBackupControls() {
                 <button class="upload-btn" onclick="exportPhotos()">📥 Exporter les photos</button>
                 <input type="file" id="import-file" accept=".json" style="display: none;" onchange="importPhotos(this)">
                 <button class="upload-btn" onclick="document.getElementById('import-file').click()">📤 Importer les photos</button>
+                <button class="upload-btn" onclick="syncWithServer()">🔄 Synchroniser maintenant</button>
             `;
             panel.appendChild(backupDiv);
         }
     });
 }
-
-// Auto-save every 30 seconds
-setInterval(() => {
-    savePhotosToSession();
-}, 30000);
-
-// Save before page unload
-window.addEventListener('beforeunload', () => {
-    savePhotosToSession();
-});
 
 // Event listeners
 window.onclick = function(event) {
@@ -1230,17 +1340,34 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
+// Connection monitoring
+window.addEventListener('online', () => {
+    isOnline = true;
+    updateConnectionStatus();
+    syncWithServer(); // Sync when coming back online
+    showNotification('Connexion rétablie - Synchronisation...', 'success');
+});
+
+window.addEventListener('offline', () => {
+    isOnline = false;
+    updateConnectionStatus();
+    showNotification('Mode hors ligne activé', 'warning');
+});
+
 // Initialize everything when DOM is ready
-document.addEventListener('DOMContentLoaded', function() {
-    initializePhotos();
+document.addEventListener('DOMContentLoaded', async function() {
+    addConnectionStatus();
+    updateConnectionStatus();
+    
+    await initializePhotos();
     setupDragAndDrop();
     setupSmoothScrolling();
     
     // Add backup controls after a short delay to ensure admin panels exist
     setTimeout(addBackupControls, 100);
     
-    console.log('Photo Journal initialized successfully!');
+    console.log('Photo Journal with Server Sync initialized successfully!');
     console.log('Press Ctrl+Alt+A to toggle admin mode');
-    console.log('Data is automatically saved to session storage');
+    console.log('Data is automatically synced with server every 5 seconds');
 });
     </script>
